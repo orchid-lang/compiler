@@ -400,4 +400,5 @@ if (is_main_module):
         link_cmd += f"./out/{module_}.o "
     link_cmd += "-o ./out/program"
     subprocess.run(link_cmd.split(" "))
-    subprocess.run("chmod +x ./out/program".split(" "))
+    if not platform.system == "Windows":
+        subprocess.run("chmod +x ./out/program".split(" "))
