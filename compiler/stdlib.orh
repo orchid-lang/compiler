@@ -1,0 +1,4 @@
+start function print takes (string str) gives ()
+define as {
+    _callSharedLib("orchidstd", "_stdprint", [str])
+} end
