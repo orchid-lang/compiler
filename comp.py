@@ -164,6 +164,9 @@ def parse_import():
     if path == "stdlib":
         # TODO: get path to stdlib
         path = "./compiler/stdlib.orh"
+    elif not str(path).__contains__("/"):
+        rel = module[:-(len(module_name) + 4)]
+        path = f"{rel}{path}"
 
     if not path.endswith(".orh"):
         path = f"{path}.orh"
