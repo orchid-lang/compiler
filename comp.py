@@ -2,9 +2,14 @@
 import sys
 import subprocess
 import platform
+import os
 module = "./compiler/main.orh"
 if len(sys.argv) > 1:
     module = sys.argv[1]
+
+debugMode = False
+if os.path.exists("./.orchiddebug"):
+    debugMode = True
 
 is_main_module = True
 if len(sys.argv) > 2:
@@ -20,7 +25,7 @@ def path_to_name(path):
  
 module_name = path_to_name(module)
 modules = [module_name]
-print(f"===== Working on {module_name} =====\n")
+if (debugMode): print(f"===== Working on {module_name} =====\n")
 
 # clean target
 subprocess.run("rm -r ./out".split(" "))
@@ -81,7 +86,7 @@ while current < len(main_j):
 
     current += 1
 
-print(f"tokens: {tokens}\n")
+if (debugMode): print(f"tokens: {tokens}\n")
 
 # Convert into ast
 current = 0
@@ -101,13 +106,13 @@ def next():
 def expect(value):
     token, _ = next()
     if not token == value:
-        raise SyntaxError(f"Expected {value} got {token}")
+        raise SyntaxError(f"Expected {value} got {token} in {module_name}")
     return token
 
 def expect_type(value):
     token, kind = next()
     if not kind == value:
-        raise SyntaxError(f"Expected type of {value} got {kind} ({token})")
+        raise SyntaxError(f"Expected type of {value} got {kind} ({token} in {module_name})")
     return token
 
 
@@ -194,7 +199,7 @@ def parse_block():
         return block
     else:
         if not token == "function":
-            raise SyntaxError(f"Expected function got '{token}'")
+            raise SyntaxError(f"Expected function got '{token}' in {module_name}")
         
         name = expect_type("ident")
         expect("takes")
@@ -241,7 +246,7 @@ while current < len(tokens):
     else:
         next()
 
-print(f"ast: {ast}")
+if (debugMode): print(f"ast: {ast}")
 
 # Generate assembly
 outfile = open(f"./out/{module_name}.asm", "w+")
@@ -303,7 +308,7 @@ for block in ast:
             if i < len(param_regs):
                 var_map[arg["name"]] = param_regs[i]
             else:
-                raise ValueError(f"Only {len(param_regs)} arguements(s) supported, tried to use {i}")
+                raise ValueError(f"Only {len(param_regs)} arguements(s) supported, tried to use {i + 1} in {module_name}")
             
         for statement in block["body"]:
             if statement["type"] == "call":
@@ -334,14 +339,14 @@ for block in ast:
                         # text_section.append(f"\tmov rdi, [{val}]")
                         pass
                     else:
-                        raise Exception(f"Unsupported argument type: {typ}")
+                        raise Exception(f"[{module_name}] Unsupported argument type: {typ}")
 
                     body.append(f"\tcall {func}")
 
                     continue
 
                 if len(args) > len(param_regs):
-                    raise ValueError(f"Only {len(param_regs)} arguements(s) supported, tried to use {len(args)} for call {name}")
+                    raise ValueError(f"Only {len(param_regs)} arguements(s) supported, tried to use {len(args)} for call {name} in {module_name}")
 
                 for i, (val, typ) in enumerate(args):
                     if typ == "str":
@@ -372,7 +377,7 @@ full_program = pretext_section + text_section + data_section
 outfile.write("\n".join(full_program) + "\n")
 outfile.close()
 
-print(f"===== Finished {module_name} =====\n")
+if (debugMode): print(f"===== Finished {module_name} =====\n")
 
 if (is_main_module):
     type = "elf64"
