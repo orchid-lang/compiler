@@ -127,7 +127,21 @@ def expect_type(value):
         raise SyntaxError(f"Expected type of {value} got {kind} ({token} in {module_name})")
     return token
 
+def generate_tree(part):
+    # TODO: generate tree
+    return []
+
+def solve_tree(tree):
+    # TODO: 'solve' tree
+    return tree
+
+def evaluate_result(res, operations):
+    # TODO: evaluate the result
+    return True
+
+constant_condition_count = -1
 def parse_condition(_condition):
+    global constant_condition_count
     condition = _condition
     c = condition["condition"]
     constant = True
@@ -160,12 +174,35 @@ def parse_condition(_condition):
     if len(current_part) > 0:
         all_parts.append(current_part)
 
-    if constant:
-        # TODO: Evaluate the condition in all_parts
-        pass
-
     if debugMode: print(f"all condition parts: {all_parts}\n")
     if debugMode: print(f"condition operations: {operations}\n")
+
+    new_parts = []
+    if constant:
+        constant_condition_count += 1
+        for part in all_parts:
+            new_parts.append(solve_tree(generate_tree(part)))
+        if debugMode: print(f"Solved parts: {new_parts}\n")
+
+        print(condition)
+        if evaluate_result(new_parts, operations):
+            function_block = {
+                "type": "function",
+                "name": f"const_cond_{constant_condition_count}",
+                "params": [],
+                "returns": [],
+                "body": condition["body"]["body"]
+            }
+            ast.append(function_block)
+            return {
+                "type": "call",
+                "name": f"const_cond_{constant_condition_count}",
+                "args": []
+            }
+        else:
+            return {
+                "type": "noop"
+            }
 
     return condition
 
@@ -372,9 +409,12 @@ for block in ast:
             elif statement["type"] == "condition":
                 text_section.append(f"start_condition_body_{conditionals_count}:")
                 # TODO implement condition
-                text_section.append(f"jmp end_condition_body_{conditionals_count}")
+                text_section.append(f"\tjmp end_condition_body_{conditionals_count}")
                 text_section.append(f"end_condition_body_{conditionals_count}:")
                 conditionals_count += 1
+            elif statement["type"] == "noop":
+                # Do nothing.
+                text_section.append(f"\t; Encountered noop block")
 
             else: raise ValueError(f"Unknown statement type ({statement["type"]}) in body")
         text_section.append("\tret")
