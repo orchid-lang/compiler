@@ -161,7 +161,7 @@ def parse_condition(_condition):
         all_parts.append(current_part)
 
     if constant:
-        # Evaluate
+        # TODO: Evaluate the condition in all_parts
         pass
 
     if debugMode: print(f"all condition parts: {all_parts}\n")
