@@ -391,6 +391,7 @@ for block in ast:
 
                 if len(args) > 0:
                     # TODO: multiple args
+                    text_section.append("\tpush rdi")
                     (val, typ) = args[0]
                     if typ == "str":
                         label = f"str{str_count}"
@@ -406,6 +407,7 @@ for block in ast:
                         text_section.append(f"\tmov rdi, [{val}]")
 
                 text_section.append(f"\tcall {name}")
+                if len(args) > 0: text_section.append("\tpop rdi")
             elif statement["type"] == "condition":
                 text_section.append(f"start_condition_body_{conditionals_count}:")
                 # TODO implement condition
