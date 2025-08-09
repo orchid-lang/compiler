@@ -59,6 +59,9 @@ while current < len(main_j):
         
         if word in keywords:
             tokens.append((word, "kwd"))
+            if word == "then":
+                # Bunch of tokens to create a function so if can use the 'then {} end' format instead of the entire function definition.
+                tokens += [('start', 'kwd'), ('function', 'kwd'), ('_', 'ident'), ('takes', 'kwd'), ('(', 'sep'), (')', 'sep'), ('gives', 'kwd'), ('(', 'sep'), (')', 'sep'), ('define', 'kwd'), ('as', 'kwd')]
         else:
             tokens.append((word, "ident"))
 
