@@ -48,6 +48,7 @@ tokens = []
 
 keywords = ["start", "function", "define", "as", "takes", "gives", "let", "make", "return", "end", "if", "then", "catch","_callSharedLib", "string", "int", "bool", "void", "nothing", "import"]
 seperators = ["{", "}", "(", ")", "[", "]"]
+operators = ["+", "-", "*", "/", "^", "=", "&", "|"]
 word = ""
 
 while current < len(main_j):
@@ -61,6 +62,14 @@ while current < len(main_j):
         else:
             tokens.append((word, "ident"))
 
+        word = ""
+
+    if main_j[current] in operators:
+        while main_j[current] in operators:
+            word += main_j[current]
+            current += 1
+
+        tokens.append((word, "op"))
         word = ""
 
     if main_j[current] == "\"" or main_j[current] == "'":
@@ -115,6 +124,47 @@ def expect_type(value):
         raise SyntaxError(f"Expected type of {value} got {kind} ({token} in {module_name})")
     return token
 
+def parse_condition(_condition):
+    condition = _condition
+    c = condition["condition"]
+    constant = True
+    for token, kind in c:
+        if not (kind == "lit" or kind == "op"):
+            # If theres only literals and operators in the condition, it is constant.
+            constant = False
+            break
+    
+    current_part = []
+
+    all_parts = []
+    operations = []
+
+    combiners = ["&&", "||"]
+    comparers = ["==", ">", "<", "<=", ">=", "!="]
+
+    for token in c:
+        if token[1] == "op" and token[0] in combiners:
+            all_parts.append(current_part)
+            current_part = []
+            operations.append(("combine", token[0]))
+        elif token[1] == "op" and token[0] in comparers:
+            all_parts.append(current_part)
+            current_part = []
+            operations.append(("compare", token[0]))
+        else:
+            current_part.append(token)
+
+    if len(current_part) > 0:
+        all_parts.append(current_part)
+
+    if constant:
+        # Evaluate
+        pass
+
+    if debugMode: print(f"all condition parts: {all_parts}\n")
+    if debugMode: print(f"condition operations: {operations}\n")
+
+    return condition
 
 def parse():
     token, kind = preview_next()
@@ -150,6 +200,23 @@ def parse():
                 "type": "dunno",
                 "value": name
             }
+    elif kind == "kwd":
+        if token == "if":
+            next()
+            expect("(")
+            condition_tokens = []
+            token = next()
+            while not token[0] == ")":
+                condition_tokens.append(token)
+                token = next()
+            expect("then")
+            body = parse_block()
+            r = {
+                "type": "condition",
+                "condition": condition_tokens,
+                "body": body,
+            }
+            return parse_condition(r)
 
 
 def parse_define():
@@ -235,7 +302,6 @@ def parse_block():
         expect("end")
         return block
 
-
 ast = []
 while current < len(tokens):
     token, _ = preview_next()
@@ -260,9 +326,13 @@ text_section = [
 string_labels = []
 str_count = 0
 
+conditionals_count = 0
+
 functions = {}
 
 for block in ast:
+    if(debugMode): print(f"\nblock: {block}")
+
     if block["type"] == "main":
         if platform.system() == "Darwin":
             pretext_section.append("global _main")
@@ -271,6 +341,7 @@ for block in ast:
             pretext_section.append("global main")
             text_section.append("main:")
         for statement in block["body"]:
+            if(debugMode): print(f"\nstatement: {statement}")
             if statement["type"] == "call":
                 name = statement["name"]
                 args = statement["args"]
@@ -295,6 +366,14 @@ for block in ast:
                         text_section.append(f"\tmov rdi, [{val}]")
 
                 text_section.append(f"\tcall {name}")
+            elif statement["type"] == "condition":
+                text_section.append(f"start_condition_body_{conditionals_count}:")
+                # TODO implement condition
+                text_section.append(f"jmp end_condition_body_{conditionals_count}")
+                text_section.append(f"end_condition_body_{conditionals_count}:")
+                conditionals_count += 1
+
+            else: raise ValueError(f"Unknown statement type ({statement["type"]}) in body")
         text_section.append("\tret")
 
     elif block["type"] == "function":
@@ -367,6 +446,13 @@ for block in ast:
 
         body.append("\tret")
         text_section += body
+
+    elif block["type"] == "import":
+        # Already handled
+        pass
+
+    else: 
+        raise ValueError(f"Unknown block type {block["type"]}!")
         
 if len(string_labels) > 0:
     data_section.append("section .rodata")
