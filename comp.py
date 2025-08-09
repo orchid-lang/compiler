@@ -373,6 +373,8 @@ functions = {}
 for block in ast:
     if(debugMode): print(f"\nblock: {block}")
 
+    if(debugMode): text_section.append(f"; {block}")
+
     if block["type"] == "main":
         if platform.system() == "Darwin":
             pretext_section.append("global _main")
