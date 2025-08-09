@@ -48,7 +48,7 @@ tokens = []
 
 keywords = ["start", "function", "define", "as", "takes", "gives", "let", "make", "return", "end", "if", "then", "catch","_callSharedLib", "string", "int", "bool", "void", "nothing", "import"]
 seperators = ["{", "}", "(", ")", "[", "]"]
-operators = ["+", "-", "*", "/", "^", "=", "&", "|"]
+operators = ["+", "-", "*", "/", "^", "=", "&", "|", "!"]
 word = ""
 
 while current < len(main_j):
@@ -128,16 +128,123 @@ def expect_type(value):
     return token
 
 def generate_tree(part):
-    # TODO: generate tree
-    return []
+    # Part format: [('1', 'lit'), ('+', 'op'), ('1', 'lit')]
+    # alt format: [('1', 'lit'), ('+', 'op'), ('1', 'lit'), ('*', 'op'), ('1', 'lit')]
+    # Tree format: {"type": "op", "action": "add", left: ("1", "lit"), right: ("1", "lit")}
+    # alt format: {"type": "op", "action": "multiply", left: {"type": "op", "action": "+", left: ("1", "lit"), right: ("1", "lit")}, right: ("1", "lit")}
+    operations = {
+        "+": "add",
+        "-": "subtract",
+        "*": "multiply",
+        "/": "divide",
+        "^": "power",
+    }
 
-def solve_tree(tree):
-    # TODO: 'solve' tree
+    if not part:
+        return None
+    
+    tree = part[0]
+
+    i = 1
+    while i < len(part):
+        token, kind = part[i]
+        right_token = part[i + 1]
+
+        if kind != 'op':
+            raise ValueError(f"Expected operator at position {i}, got {token}")
+        
+        tree = {
+            "type": "op",
+            "action": operations.get(token, token),
+            "left": tree,
+            "right": right_token
+        }
+
+        i += 2
+
+    if (debugMode): print(f"generated tree: {tree}\n")
+
     return tree
 
+def solve_tree(tree):
+    if isinstance(tree, tuple) and tree[1] == 'lit':
+        if str(tree[0]).isnumeric():
+            return float(tree[0])
+        else: return str(tree[0])
+    
+    if isinstance(tree, dict) and tree["type"] == "op":
+        left_val = solve_tree(tree["left"])
+        right_val = solve_tree(tree["right"])
+
+        action = tree["action"]
+        if action == "add":
+            return left_val + right_val
+        elif action == "subtract":
+            return left_val - right_val
+        elif action == "multiply":
+            return left_val * right_val
+        elif action == "divide":
+            return left_val / right_val
+        else:
+            raise ValueError(f"Unknown operation: {action}")
+
+    raise ValueError(f"Invalid tree node: {tree}")
+
 def evaluate_result(res, operations):
-    # TODO: evaluate the result
-    return True
+    if not operations:
+        if str(res[0]).isnumeric():
+            return float(res[0]) >= 1
+        else:
+            return res[0] == "true"
+        
+    results = []
+    cur_op = 0
+    i = 0
+    while i < len(res):
+        if cur_op < len(operations) and operations[cur_op][0] == "compare":
+            _, comp_op = operations[cur_op]
+            left = res[i]
+            right = res[i + 1]
+
+            if comp_op == "==":
+                comp_res = left == right
+            elif comp_op == "!=":
+                comp_res = left != right
+            elif comp_op == ">":
+                comp_res = left > right
+            elif comp_op == "<":
+                comp_res = left < right
+            elif comp_op == ">=":
+                comp_res = left >= right
+            elif comp_op == "<=":
+                comp_res = left <= right
+            else:
+                raise ValueError(f"Unknown comparison: {comp_op}")
+            
+            results.append(bool(comp_res))
+            i += 2
+            cur_op += 1
+        else:
+            if str(res[0]).isnumeric():
+                results.append(float(res[i]) >= 1)
+            else:
+                results.append(res[i] == "true")
+            i += 1
+
+    final_res = results[0]
+    comb_i = 0
+    for kind, value in operations:
+        if kind == "combine":
+            right_val = results[comb_i + i]
+            if value == "&&":
+                final_res = final_res and right_val
+            elif value == "||":
+                final_res = final_res or right_val
+            else:
+                raise ValueError(f"Unknown combiner: {value}")
+            comb_i += 1
+    
+    return final_res
 
 constant_condition_count = -1
 def parse_condition(_condition):
@@ -184,7 +291,6 @@ def parse_condition(_condition):
             new_parts.append(solve_tree(generate_tree(part)))
         if debugMode: print(f"Solved parts: {new_parts}\n")
 
-        print(condition)
         if evaluate_result(new_parts, operations):
             function_block = {
                 "type": "function",
