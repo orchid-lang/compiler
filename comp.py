@@ -565,21 +565,27 @@ for block in ast:
                 text_section.append(f"\tcall {name}")
                 if len(args) > 0: text_section.append("\tpop rdi")
             elif statement["type"] == "condition":
-                # Evaluate the condition at runtime: true if >=1 (number) or string 'true', or if variable, check at runtime
                 cond = statement["condition"][0] if isinstance(statement["condition"], list) and len(statement["condition"]) > 0 else statement["condition"]
                 cond_label = f"start_condition_body_{statement['id']}"
                 end_label = f"end_condition_body_{statement['id']}"
                 text_section.append(f"{cond_label}:")
 
-                # Handle different condition types
                 if isinstance(cond, tuple):
                     val, kind = cond
                     if kind in ("var", "ident"):
+                        is_param = False
+                        for param in block['params']:
+                            if param['name'] == val:
+                                is_param = True
+
                         ext = ""
                         if platform.system() == "Darwin":
                             ext = "rel "
 
-                        text_section.append(f"\tmov rax, [{ext}{val}]")
+                        if is_param:
+                            text_section.append("\tmov rax, rdi")
+                        else:
+                            text_section.append(f"\tmov rax, [{ext}{val}]")
 
                         text_section.append(f"\tcmp rax, 1")
                         text_section.append(f"\tjge {cond_label}_true")
@@ -596,10 +602,7 @@ for block in ast:
                 else:
                     text_section.append(f"\tjmp {end_label} ; unknown condition type")
 
-                # Body of the condition
                 for stmt in statement["body"]["body"]:
-                    # Recursively emit code for statements in the condition body
-                    # This is a simplified version; you may want to refactor for reuse
                     if stmt["type"] == "call":
                         name = stmt["name"]
                         args = stmt["args"]
@@ -626,7 +629,6 @@ for block in ast:
                         text_section.append(f"\tcall {name}")
                         if len(args) > 0:
                             text_section.append("\tpop rdi")
-                    # Add more statement types as needed
 
                 text_section.append(f"\tjmp {end_label}")
                 text_section.append(f"{end_label}:")
@@ -741,11 +743,19 @@ for block in ast:
                 if isinstance(cond, tuple):
                     val, kind = cond
                     if kind in ("var", "ident"):
+                        is_param = False
+                        for param in block['params']:
+                            if param['name'] == val:
+                                is_param = True
+
                         ext = ""
                         if platform.system() == "Darwin":
                             ext = "rel "
 
-                        text_section.append(f"\tmov rax, [{ext}{val}]")
+                        if is_param:
+                            text_section.append("\tmov rax, rdi")
+                        else:
+                            text_section.append(f"\tmov rax, [{ext}{val}]")
 
                         text_section.append(f"\tcmp rax, 1")
                         text_section.append(f"\tjge {cond_label}_true")

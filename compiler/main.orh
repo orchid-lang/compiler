@@ -7,6 +7,6 @@ define as {
 
 start main
 define as {
-    let test = 0 end
-    print_if_true(test)
+    let variable = 0 end
+    print_if_true(variable)
 } end
