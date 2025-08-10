@@ -167,26 +167,41 @@ def generate_tree(part):
     return tree
 
 def solve_tree(tree):
-    if isinstance(tree, tuple) and tree[1] == 'lit':
-        if str(tree[0]).isnumeric():
-            return float(tree[0])
-        else: return str(tree[0])
-    
+    if isinstance(tree, tuple):
+        if tree[1] == 'lit':
+            if str(tree[0]).isnumeric():
+                return (float(tree[0]), "num")
+            else:
+                return (str(tree[0]), "str")
+        else:
+            return tree
+
     if isinstance(tree, dict) and tree["type"] == "op":
         left_val = solve_tree(tree["left"])
         right_val = solve_tree(tree["right"])
 
-        action = tree["action"]
-        if action == "add":
-            return left_val + right_val
-        elif action == "subtract":
-            return left_val - right_val
-        elif action == "multiply":
-            return left_val * right_val
-        elif action == "divide":
-            return left_val / right_val
+        if (
+            isinstance(left_val, tuple) and left_val[1] in ("num", "str") and
+            isinstance(right_val, tuple) and right_val[1] in ("num", "str")
+        ):
+            action = tree["action"]
+            if action == "add":
+                return (left_val[0] + right_val[0], left_val[1] if left_val[1] == right_val[1] else "mixed")
+            elif action == "subtract":
+                return (left_val[0] - right_val[0], left_val[1])
+            elif action == "multiply":
+                return (left_val[0] * right_val[0], left_val[1])
+            elif action == "divide":
+                return (left_val[0] / right_val[0], left_val[1])
+            else:
+                raise ValueError(f"Unknown operation: {action}")
         else:
-            raise ValueError(f"Unknown operation: {action}")
+            return {
+                "type": "op",
+                "action": tree["action"],
+                "left": left_val,
+                "right": right_val
+            }
 
     raise ValueError(f"Invalid tree node: {tree}")
 
@@ -247,8 +262,9 @@ def evaluate_result(res, operations):
     return final_res
 
 constant_condition_count = -1
+non_constant_condition_count = -1
 def parse_condition(_condition):
-    global constant_condition_count
+    global constant_condition_count, non_constant_condition_count
     condition = _condition
     c = condition["condition"]
     constant = True
@@ -309,8 +325,15 @@ def parse_condition(_condition):
             return {
                 "type": "noop"
             }
+    else:
+        non_constant_condition_count += 1
+        for part in all_parts:
+            new_parts.append(solve_tree(generate_tree(part)))
+        if debugMode: print(f"Solved parts: {new_parts}\n")
 
-    return condition
+        condition["condition"] = new_parts
+        condition["id"] = non_constant_condition_count
+        return condition
 
 def parse():
     token, kind = preview_next()
@@ -360,10 +383,29 @@ def parse():
             r = {
                 "type": "condition",
                 "condition": condition_tokens,
+                "id": None,
+                "operations": [],
                 "body": body,
             }
             return parse_condition(r)
-
+        elif token == "let":
+            next()
+            name = expect_type("ident")
+            expect("=")
+            print(f"var name: {name}")
+            var_value = []
+            tok = next()
+            while not (tok[1] == "kwd" and tok[0] == "end"):
+                var_value.append(tok)
+                tok = next()
+            var_value = solve_tree(generate_tree(var_value))
+            print(f"var value: {var_value}")
+            return {
+                "type": "definition",
+                "value": var_value,
+                "name": name,
+            }
+        
 
 def parse_define():
     expect("define")
@@ -469,10 +511,12 @@ text_section = [
     "section .text",
 ]
 
+var_section = [
+    "section .data"
+]
+
 string_labels = []
 str_count = 0
-
-conditionals_count = 0
 
 functions = {}
 
@@ -489,6 +533,7 @@ for block in ast:
             pretext_section.append("global main")
             text_section.append("main:")
         for statement in block["body"]:
+            if(debugMode): text_section.append(f"\t; statement: {statement}")
             if(debugMode): print(f"\nstatement: {statement}")
             if statement["type"] == "call":
                 name = statement["name"]
@@ -512,16 +557,103 @@ for block in ast:
                     elif typ == "num":
                         text_section.append(f"\tmov rdi, {val}")
                     elif typ == "var":
-                        text_section.append(f"\tmov rdi, [{val}]")
+                        ext = ""
+                        if platform.system() == "Darwin":
+                            ext = "rel "
+                        text_section.append(f"\tmov rdi, [{ext}{val}]")
 
                 text_section.append(f"\tcall {name}")
                 if len(args) > 0: text_section.append("\tpop rdi")
             elif statement["type"] == "condition":
-                text_section.append(f"start_condition_body_{conditionals_count}:")
-                # TODO implement condition
-                text_section.append(f"\tjmp end_condition_body_{conditionals_count}")
-                text_section.append(f"end_condition_body_{conditionals_count}:")
-                conditionals_count += 1
+                # Evaluate the condition at runtime: true if >=1 (number) or string 'true', or if variable, check at runtime
+                cond = statement["condition"][0] if isinstance(statement["condition"], list) and len(statement["condition"]) > 0 else statement["condition"]
+                cond_label = f"start_condition_body_{statement['id']}"
+                end_label = f"end_condition_body_{statement['id']}"
+                text_section.append(f"{cond_label}:")
+
+                # Handle different condition types
+                if isinstance(cond, tuple):
+                    val, kind = cond
+                    if kind in ("var", "ident"):
+                        ext = ""
+                        if platform.system() == "Darwin":
+                            ext = "rel "
+
+                        text_section.append(f"\tmov rax, [{ext}{val}]")
+
+                        text_section.append(f"\tcmp rax, 1")
+                        text_section.append(f"\tjge {cond_label}_true")
+                        
+                        # TODO: allow 'true' string
+
+                        text_section.append(f"\tjmp {end_label}")
+                        text_section.append(f"{cond_label}_true:")
+                    else:
+                        text_section.append(f"\tjmp {end_label} ; unknown condition kind")
+                elif isinstance(cond, dict):
+                    # TODO: handle expression trees if needed
+                    text_section.append(f"\tjmp {end_label} ; complex condition not implemented")
+                else:
+                    text_section.append(f"\tjmp {end_label} ; unknown condition type")
+
+                # Body of the condition
+                for stmt in statement["body"]["body"]:
+                    # Recursively emit code for statements in the condition body
+                    # This is a simplified version; you may want to refactor for reuse
+                    if stmt["type"] == "call":
+                        name = stmt["name"]
+                        args = stmt["args"]
+                        if name not in functions and name != "callSharedLib":
+                            pretext_section.append(f"extern {name}")
+                        if len(args) > 0:
+                            text_section.append("\tpush rdi")
+                            (val, typ) = args[0]
+                            if typ == "str":
+                                label = f"str{str_count}"
+                                str_count += 1
+                                string_labels.append((label, val))
+                                if platform.system() == "Darwin":
+                                    text_section.append(f"\tlea rdi, [rel {label}]")
+                                else:
+                                    text_section.append(f"\tmov rdi, {label}")
+                            elif typ == "num":
+                                text_section.append(f"\tmov rdi, {val}")
+                            elif typ == "var":
+                                ext = ""
+                                if platform.system() == "Darwin":
+                                    ext = "rel "
+                                text_section.append(f"\tmov rdi, [{ext}{val}]")
+                        text_section.append(f"\tcall {name}")
+                        if len(args) > 0:
+                            text_section.append("\tpop rdi")
+                    # Add more statement types as needed
+
+                text_section.append(f"\tjmp {end_label}")
+                text_section.append(f"{end_label}:")
+            elif statement["type"] == "definition":
+                name = statement["name"]
+                value = statement["value"]
+
+                if isinstance(value, tuple):
+                    val, kind = value
+                    if kind == "num":
+                        var_section.append(f"{name}: dq 0")
+                        ext = ""
+                        if platform.system() == "Darwin":
+                            ext = "rel "
+                        text_section.append(f"\tmov qword [{ext}{name}], {str(int(val))}")
+                    elif kind == "str":
+                        label = f"{name}_str"
+                        string_labels.append((label, val))
+                        var_section.append(f"{name}: dq {label}")
+                    elif kind in ("var", "ident"):
+                        ext = ""
+                        if platform.system() == "Darwin":
+                            ext = "rel "
+                        text_section.append(f"\tmov rax, [{ext}{val}]")
+                        text_section.append(f"\tmov qword [{ext}{name}], rax")
+
+                    
             elif statement["type"] == "noop":
                 # Do nothing.
                 text_section.append(f"\t; Encountered noop block")
@@ -534,7 +666,7 @@ for block in ast:
         functions[block["name"]] = block
         # Just rdi for now as mentioned before, just one arg supported for now
         param_regs = ["rdi"]
-        body = [f"{block['name']}:"]
+        text_section.append(f"{block['name']}:")
         var_map = {}
         for i, arg in enumerate(block["params"]):
             if i < len(param_regs):
@@ -543,6 +675,8 @@ for block in ast:
                 raise ValueError(f"Only {len(param_regs)} arguements(s) supported, tried to use {i + 1} in {module_name}")
             
         for statement in block["body"]:
+            if(debugMode): text_section.append(f"\t; statement: {statement}")
+            if(debugMode): print(f"\nstatement: {statement}")
             if statement["type"] == "call":
                 name = statement["name"]
                 args = statement["args"]
@@ -562,18 +696,18 @@ for block in ast:
                         str_count += 1
                         string_labels.append((label,', '.join([str(ord(c)) for c in val])))
                         if platform.system() == "Darwin":
-                            body.append(f"\tlea rdi, [rel {label}]")
+                            text_section.append(f"\tlea rdi, [rel {label}]")
                         else:
-                            body.append(f"\tmov rdi, {label}")
+                            text_section.append(f"\tmov rdi, {label}")
                     elif typ == "num":
-                        body.append(f"\tmov rdi, {val}")
+                        text_section.append(f"\tmov rdi, {val}")
                     elif typ == "var":
                         # text_section.append(f"\tmov rdi, [{val}]")
                         pass
                     else:
                         raise Exception(f"[{module_name}] Unsupported argument type: {typ}")
 
-                    body.append(f"\tcall {func}")
+                    text_section.append(f"\tcall {func}")
 
                     continue
 
@@ -585,20 +719,114 @@ for block in ast:
                         label = f"str{str_count}"
                         str_count += 1
                         string_labels.append((label, val))
-                        body.append(f"\tlea {param_regs[i]}, [rel {label}]")
+                        text_section.append(f"\tlea {param_regs[i]}, [rel {label}]")
                     elif typ == "num":
-                        body.append(f"\tmov {param_regs[i]}, {val}")
+                        text_section.append(f"\tmov {param_regs[i]}, {val}")
                     elif typ == "var":
                         reg = var_map.get(val, "undef")
-                        body.append(f"\tmov {param_regs[i]}, {reg}")
+                        text_section.append(f"\tmov {param_regs[i]}, {reg}")
 
                 if name == block["name"]:
-                    body.append(f"\tjmp {name}")
+                    text_section.append(f"\tjmp {name}")
                 else:
-                    body.append(f"\tcall {name}")
+                    text_section.append(f"\tcall {name}")
+            elif statement["type"] == "condition":
+                # Evaluate the condition at runtime: true if >=1 (number) or string 'true', or if variable, check at runtime
+                cond = statement["condition"][0] if isinstance(statement["condition"], list) and len(statement["condition"]) > 0 else statement["condition"]
+                cond_label = f"start_condition_body_{statement['id']}"
+                end_label = f"end_condition_body_{statement['id']}"
+                text_section.append(f"{cond_label}:")
 
-        body.append("\tret")
-        text_section += body
+                # Handle different condition types
+                if isinstance(cond, tuple):
+                    val, kind = cond
+                    if kind in ("var", "ident"):
+                        ext = ""
+                        if platform.system() == "Darwin":
+                            ext = "rel "
+
+                        text_section.append(f"\tmov rax, [{ext}{val}]")
+
+                        text_section.append(f"\tcmp rax, 1")
+                        text_section.append(f"\tjge {cond_label}_true")
+                        
+                        # TODO: allow 'true' string
+
+                        text_section.append(f"\tjmp {end_label}")
+                        text_section.append(f"{cond_label}_true:")
+                    else:
+                        text_section.append(f"\tjmp {end_label} ; unknown condition kind")
+                elif isinstance(cond, dict):
+                    # TODO: handle expression trees if needed
+                    text_section.append(f"\tjmp {end_label} ; complex condition not implemented")
+                else:
+                    text_section.append(f"\tjmp {end_label} ; unknown condition type")
+
+                # Body of the condition
+                for stmt in statement["body"]["body"]:
+                    # Recursively emit code for statements in the condition body
+                    # This is a simplified version; you may want to refactor for reuse
+                    if stmt["type"] == "call":
+                        name = stmt["name"]
+                        args = stmt["args"]
+                        if name not in functions and name != "callSharedLib":
+                            pretext_section.append(f"extern {name}")
+                        if len(args) > 0:
+                            text_section.append("\tpush rdi")
+                            (val, typ) = args[0]
+                            if typ == "str":
+                                label = f"str{str_count}"
+                                str_count += 1
+                                string_labels.append((label, val))
+                                if platform.system() == "Darwin":
+                                    text_section.append(f"\tlea rdi, [rel {label}]")
+                                else:
+                                    text_section.append(f"\tmov rdi, {label}")
+                            elif typ == "num":
+                                text_section.append(f"\tmov rdi, {val}")
+                            elif typ == "var":
+                                ext = ""
+                                if platform.system() == "Darwin":
+                                    ext = "rel "
+                                text_section.append(f"\tmov rdi, [{ext}{val}]")
+                        text_section.append(f"\tcall {name}")
+                        if len(args) > 0:
+                            text_section.append("\tpop rdi")
+                    # Add more statement types as needed
+
+                text_section.append(f"\tjmp {end_label}")
+                text_section.append(f"{end_label}:")
+            elif statement["type"] == "definition":
+                name = statement["name"]
+                value = statement["value"]
+
+                if isinstance(value, tuple):
+                    val, kind = value
+                    if kind == "num":
+                        var_section.append(f"{name}: dq 0")
+                        ext = ""
+                        if platform.system() == "Darwin":
+                            ext = "rel "
+                        text_section.append(f"\tmov qword [{ext}{name}], {str(int(val))}")
+                    elif kind == "str":
+                        label = f"{name}_str"
+                        string_labels.append((label, val))
+                        var_section.append(f"{name}: dq {label}")
+                    elif kind in ("var", "ident"):
+                        ext = ""
+                        if platform.system() == "Darwin":
+                            ext = "rel "
+                        text_section.append(f"\tmov rax, [{ext}{val}]")
+                        text_section.append(f"\tmov qword [{ext}{name}], rax")
+
+            elif statement["type"] == "noop":
+                # Do nothing.
+                text_section.append(f"\t; Encountered noop block")
+
+            else: raise ValueError(f"Unknown statement type ({statement["type"]}) in body")
+
+        text_section.append("\tret")
+        # text_section += body
 
     elif block["type"] == "import":
         # Already handled
@@ -612,7 +840,7 @@ if len(string_labels) > 0:
 for label, val in string_labels:
     data_section.append(f"{label}: db \"{val}\", 0")
 
-full_program = pretext_section + text_section + data_section
+full_program = pretext_section + var_section + text_section + data_section
 outfile.write("\n".join(full_program) + "\n")
 outfile.close()
 
