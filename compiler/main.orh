@@ -1,3 +1,9 @@
+start function test takes (string str) gives ()
+define as {
+    print(str)
+} end
+
+
 start main
 define as {
     print("test")
