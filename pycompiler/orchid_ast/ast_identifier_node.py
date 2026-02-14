@@ -11,9 +11,9 @@ class Ast_identifier_node(Ast_node):
         self.__scanner = scanner
         self.__name = ""
         self.__args = []
-        self.parse()
+        self.__parse()
 
-    def parse(self):
+    def __parse(self):
         name = self.__scanner.next()
 
         if self.__scanner.preview().word_is("("):
