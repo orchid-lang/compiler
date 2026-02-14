@@ -32,7 +32,7 @@ class Ast_block:
         while True:
             if self.__scanner.current_item().word_is("end"):
                 break
-            body.append()
+            body.append(self.__scanner.current_item().parse(self.__scanner))
         return body
     
     def __define_function(self):
