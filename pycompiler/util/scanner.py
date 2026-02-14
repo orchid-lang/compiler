@@ -8,7 +8,7 @@ class Scanner:
 
     def current_item(self):
         return self.__content[self.__current]
-    
+
     def preview(self):
         if self.__current + 1 >= len(self.__content) - 1: return None
         return self.__content[self.__current + 1]

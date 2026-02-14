@@ -18,3 +18,5 @@ class Ast_root_node(Ast_node):
                 self.__tree.append(block.get_node())
             else:
                 self.__scanner.next()
+
+        print(self.__tree)

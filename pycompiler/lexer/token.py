@@ -11,3 +11,5 @@ class Token:
     def word_is(self, check):
         return self.__word == check
     
+    def __str__(self):
+        return f"Token '{self.__word}' is a(n) {self.__type.name}"
