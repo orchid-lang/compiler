@@ -7,9 +7,9 @@ def main():
     config.init()
     util.init()
 
-    module_path = config.default_module_path
-    if len(sys.argv) > 1:
-        module_path = sys.argv[1]
+    util.clean_target()
+
+    module_path = util.get_module_path()
     module = Module(module_path)
 
 if __name__ == "__main__":
