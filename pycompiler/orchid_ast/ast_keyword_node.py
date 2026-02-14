@@ -53,4 +53,3 @@ class Ast_keyword_node(Ast_node):
             util.logger.log(f"New variable: {self.__name}", Log_level.DEBUG)
             self.set_type(Ast_type.DEFINITION)
             self.__expect_token("end")
-            

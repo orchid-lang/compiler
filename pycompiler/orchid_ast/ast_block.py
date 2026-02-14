@@ -30,7 +30,7 @@ class Ast_block:
         self.__expect_token("define")
         self.__expect_token("as")
         body = []
-        while True:
+        while not self.__scanner.is_at_end():
             token = self.__scanner.next()
             if token.word_is("end"):
                 break
@@ -38,6 +38,8 @@ class Ast_block:
             if not parsed: continue
             body.append(parsed)
             
+        # for node in body:
+        #     print(node)
         return body
     
     def __define_function(self):

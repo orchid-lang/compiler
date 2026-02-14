@@ -12,6 +12,9 @@ class Ast_node:
     
     def set_type(self, type):
         self.__type = type
+
+    def get_name(self):
+        return ""
     
     def get_descendants(self):
         return []
