@@ -10,4 +10,4 @@ class Ast_function_node(Ast_node):
         self.__body = body
 
     def __str__(self):
-        return f"Ast_function_node: {self.__name.get_word()}"
+        return f"Ast_function_node: {self.__name.get_word()} with {len(self.__body)} body nodes"

@@ -5,6 +5,7 @@ from orchid_ast.ast_literal_node import Ast_literal_node
 from orchid_ast.literal_type import Literal_type
 from orchid_ast.ast_type import Ast_type
 from util import util
+from util.log_level import Log_level
 
 class Ast_identifier_node(Ast_node):
     def __init__(self, scanner):

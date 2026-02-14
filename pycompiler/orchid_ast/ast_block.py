@@ -56,10 +56,9 @@ class Ast_block:
         returns = []
         while not self.__scanner.current_item().word_is(")"):
             returns.append(self.__expect_type(Token_type.KEYWORD))
-
-        self.__expect_token(")")
-
-        return Ast_function_node(name, args, returns, None)
+        
+        body = self.__parse_body()
+        return Ast_function_node(name, args, returns, body)
 
     def parse(self):
         self.__expect_token("start")
