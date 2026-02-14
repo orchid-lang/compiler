@@ -9,11 +9,12 @@ def init():
     log_level = Log_level.VERBOSE
 
 def init_internal():
-    global keywords, seperators, operators, then_expands_to
+    global keywords, seperators, operators, quotes, then_expands_to
 
     keywords = ["start", "function", "define", "as", "takes", "gives", "let", "make", "return", "end", "if", "then", "catch","_callSharedLib", "string", "int", "bool", "void", "nothing", "import"]
     seperators = ["{", "}", "(", ")", "[", "]", ","]
     operators = ["+", "-", "*", "/", "^", "=", "&", "|", "!"]
+    quotes = ["\"", "'"]
     then_expands_to = [
         Token("start", Token_type.KEYWORD),
         Token("function", Token_type.KEYWORD),
