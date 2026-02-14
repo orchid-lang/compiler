@@ -2,6 +2,8 @@ from orchid_ast.ast_node import Ast_node
 from orchid_ast.ast_type import Ast_type
 from orchid_ast.ast_block import Ast_block
 from util.scanner import Scanner
+from util import util
+from util.log_level import Log_level
 
 class Ast_root_node(Ast_node):
     def __init__(self, tokens):
@@ -18,3 +20,6 @@ class Ast_root_node(Ast_node):
                 self.__tree.append(block.get_node())
             else:
                 self.__scanner.next()
+
+        for i, node in enumerate(self.__tree):
+            util.logger.log(f"#{i}: {node}", Log_level.DEBUG)
