@@ -1,5 +1,4 @@
 start main
 define as {
-    let text = "test" end
-    print(text)
+    print("test")
 } end
