@@ -13,6 +13,7 @@ def main():
     module = Module(module_path)
     module.read()
     module.read_tokens()
+    module.generate_ast()
 
 if __name__ == "__main__":
     main()

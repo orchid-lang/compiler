@@ -1,6 +1,7 @@
 from util import util
 from util.log_level import Log_level
 from lexer.tokenizer import Tokenizer
+from orchid_ast.ast_root_node import Ast_root_node
 
 class Module:
     def __init__(self, path):
@@ -13,6 +14,8 @@ class Module:
 
         self.__tokens = []
         self.__tokenizer = None
+
+        self.__ast = None
 
     def read(self):
         util.logger.log(f"Reading Module ({self.__path})", Log_level.DEBUG)
@@ -36,3 +39,6 @@ class Module:
 
         util.logger.log(f"Read {len(self.__tokens)} tokens for Module ({self.__path})", Log_level.DEBUG)
 
+    def generate_ast(self):
+        self.__ast = Ast_root_node(self.__tokens)
+        self.__ast.generate()

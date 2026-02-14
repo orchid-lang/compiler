@@ -1,6 +1,6 @@
 from util import util, config
 from util.log_level import Log_level
-from lexer.scanner import Scanner
+from util.scanner import Scanner
 from lexer.token import Token
 from lexer.token_type import Token_type
 
@@ -18,11 +18,11 @@ class Tokenizer:
         self.__tokens.append(Token(self.__word, type))
 
     def __read_keyword(self):
-        if not self.__scanner.current_char().isalpha(): return False
+        if not self.__scanner.current_item().isalpha(): return False
 
-        self.__word += self.__scanner.current_char()
-        while not self.__scanner.next().isspace() and self.__scanner.current_char() not in config.operators and self.__scanner.current_char() not in config.seperators:
-            self.__word += self.__scanner.current_char()
+        self.__word += self.__scanner.current_item()
+        while not self.__scanner.next().isspace() and self.__scanner.current_item() not in config.operators and self.__scanner.current_item() not in config.seperators:
+            self.__word += self.__scanner.current_item()
 
         if self.__word not in config.keywords:
             self.__new_token(Token_type.IDENTIFIER)
@@ -38,10 +38,10 @@ class Tokenizer:
         return True
 
     def __read_operator(self):
-        if self.__scanner.current_char() not in config.operators: return False
+        if self.__scanner.current_item() not in config.operators: return False
 
-        self.__word += self.__scanner.current_char()
-        while self.__scanner.current_char() in config.operators:
+        self.__word += self.__scanner.current_item()
+        while self.__scanner.current_item() in config.operators:
             self.__word += self.__scanner.next()
 
         self.__new_token(Token_type.OPERATOR)
@@ -49,12 +49,12 @@ class Tokenizer:
         return True
 
     def __read_string_literal(self):
-        if self.__scanner.current_char() not in config.quotes: return False
+        if self.__scanner.current_item() not in config.quotes: return False
 
-        begin_quote = self.__scanner.current_char()
+        begin_quote = self.__scanner.current_item()
 
         while self.__scanner.next() != begin_quote:
-            self.__word += self.__scanner.current_char()
+            self.__word += self.__scanner.current_item()
 
         self.__scanner.next()
 
@@ -63,9 +63,9 @@ class Tokenizer:
         return True
 
     def __read_numeric_literal(self):
-        if not self.__scanner.current_char().isnumeric(): return False
+        if not self.__scanner.current_item().isnumeric(): return False
 
-        while self.__scanner.current_char().isnumeric():
+        while self.__scanner.current_item().isnumeric():
             self.__word += self.__scanner.next()
 
         self.__new_token(Token_type.LITERAL)
@@ -73,14 +73,14 @@ class Tokenizer:
         return True
 
     def __read_seperator(self):
-        if self.__scanner.current_char() not in config.seperators: return False
+        if self.__scanner.current_item() not in config.seperators: return False
 
-        self.__tokens.append(Token(self.__scanner.current_char(), Token_type.SEPERATOR))
+        self.__tokens.append(Token(self.__scanner.current_item(), Token_type.SEPERATOR))
         self.__scanner.next()
         return True
 
     def __read_whitespace(self):
-        if not self.__scanner.current_char().isspace(): return False
+        if not self.__scanner.current_item().isspace(): return False
         self.__scanner.next()
         return True
 

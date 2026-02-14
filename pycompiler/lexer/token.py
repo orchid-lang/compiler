@@ -7,3 +7,7 @@ class Token:
         util.logger.log(f"Initializing new Token ('{word}', {type.name})", Log_level.DEBUG)
         self.__type = type
         self.__word = word
+
+    def word_is(self, check):
+        return self.__word == check
+    

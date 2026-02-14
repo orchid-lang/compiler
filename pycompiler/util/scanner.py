@@ -1,17 +1,21 @@
 from util import util
-from log_level import Log_level
+from util.log_level import Log_level
 
 class Scanner:
     def __init__(self, content):
         self.__current = 0
         self.__content = content
 
-    def current_char(self):
+    def current_item(self):
         return self.__content[self.__current]
+    
+    def preview(self):
+        if self.__current + 1 >= len(self.__content) - 1: return None
+        return self.__content[self.__current + 1]
 
     def next(self):
         self.__current += 1
-        return self.current_char()
+        return self.current_item()
     
     def is_at_end(self):
         util.logger.log(f"\tScanner at: {self.__current + 1} / {len(self.__content)}", Log_level.VERBOSE)
