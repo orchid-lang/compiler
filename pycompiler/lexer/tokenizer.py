@@ -41,8 +41,8 @@ class Tokenizer:
         if self.__scanner.current_item() not in config.operators: return False
 
         self.__word += self.__scanner.current_item()
-        while self.__scanner.current_item() in config.operators:
-            self.__word += self.__scanner.next()
+        while self.__scanner.next() in config.operators:
+            self.__word += self.__scanner.current_item()
 
         self.__new_token(Token_type.OPERATOR)
         self.__reset_word()
