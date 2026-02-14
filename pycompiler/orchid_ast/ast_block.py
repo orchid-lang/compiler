@@ -69,11 +69,9 @@ class Ast_block:
         token = self.__scanner.current_item()
         if token.word_is("main"):
             self.__node = Ast_main_node(self.__parse_body())
-            # self.__expect_token("end")
             return
 
         self.__node = self.__define_function()
-        # self.__expect_token("end")
 
     def get_node(self):
         return self.__node

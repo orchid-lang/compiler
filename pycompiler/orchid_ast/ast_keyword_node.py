@@ -49,6 +49,8 @@ class Ast_keyword_node(Ast_node):
             self.__scanner.next()
             self.__name = self.__expect_type(Token_type.IDENTIFIER)
             self.__expect_token("=")
+            self.__scanner.next() #FIXME: Right now we skip the value
             util.logger.log(f"New variable: {self.__name}", Log_level.DEBUG)
             self.set_type(Ast_type.DEFINITION)
+            self.__expect_token("end")
             

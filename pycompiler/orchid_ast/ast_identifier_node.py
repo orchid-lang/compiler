@@ -36,6 +36,7 @@ class Ast_identifier_node(Ast_node):
                 if self.__scanner.preview().word_is(","):
                     self._scanner.next()
 
+            util.logger.log(f"New function call to {name} with {len(args)} args", Log_level.VERBOSE)
             self.set_type(Ast_type.CALL)
             self.__name = name
             self.__args = args

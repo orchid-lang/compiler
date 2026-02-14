@@ -19,6 +19,7 @@ class Ast_root_node(Ast_node):
                 block.parse()
                 self.__tree.append(block.get_node())
             else:
+                print(token.get_word())
                 self.__scanner.next()
 
         for i, node in enumerate(self.__tree):
