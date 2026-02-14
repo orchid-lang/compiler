@@ -1,12 +1,5 @@
-start function print_if_true takes (int test) gives () 
-define as {
-    if (test) then {
-        print("Hi!")
-    } end
-} end
-
 start main
 define as {
-    let variable = 0 end
-    print_if_true(variable)
+    let text = "test" end
+    print(text)
 } end

@@ -459,7 +459,9 @@ def parse_block():
         name = expect_type("ident")
         expect("takes")
         expect("(")
-        
+
+        if (debugMode): print(f"\tDefining function: {name}")
+
         args = []
         while not preview_next()[0] == ")":
             arg_type = expect_type("kwd")
@@ -475,7 +477,7 @@ def parse_block():
         
         returns = []
         while not preview_next()[0] == ")":
-            return_type = expect_type("ident")
+            return_type = expect_type("kwd")
             returns.append(return_type)
 
         expect(")")
