@@ -6,6 +6,6 @@ class Ast_node:
 
     def get_type(self):
         return self.__type.name
-    
+
     def __str__(self):
         return f"Ast_node of type {self.__type.name}"

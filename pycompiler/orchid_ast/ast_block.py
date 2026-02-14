@@ -25,6 +25,16 @@ class Ast_block:
         self.__scanner.next()
         return x
     
+    def __parse_body(self):
+        self.__expect_token("define")
+        self.__expect_token("as")
+        body = []
+        while True:
+            if self.__scanner.current_item().word_is("end"):
+                break
+            body.append()
+        return body
+    
     def __define_function(self):
         self.__expect_token("function")
         name = self.__expect_type(Token_type.IDENTIFIER)
