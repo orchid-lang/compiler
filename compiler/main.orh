@@ -6,5 +6,6 @@ define as {
 
 start main
 define as {
-    print("test")
+    let x = "test" end
+    print(x)
 } end

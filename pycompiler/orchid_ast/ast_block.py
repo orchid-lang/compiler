@@ -26,13 +26,14 @@ class Ast_block:
         return x
     
     def __parse_body(self):
+        self.__scanner.next()
         self.__expect_token("define")
         self.__expect_token("as")
         body = []
         while True:
             if self.__scanner.current_item().word_is("end"):
                 break
-            body.append(self.__scanner.current_item().parse(self.__scanner))
+            body.append(self.__scanner.next().parse(self.__scanner))
         return body
     
     def __define_function(self):
@@ -64,7 +65,7 @@ class Ast_block:
         self.__expect_token("start")
         token = self.__scanner.current_item()
         if token.word_is("main"):
-            self.__node = Ast_main_node(None) # TODO: parse body content
+            self.__node = Ast_main_node(self.__parse_body())
             # self.__expect_token("end")
             return
 

@@ -4,6 +4,7 @@ from lexer.token_type import Token_type
 from orchid_ast.ast_literal_node import Ast_literal_node
 from orchid_ast.literal_type import Literal_type
 from orchid_ast.ast_type import Ast_type
+from util import util
 
 class Ast_identifier_node(Ast_node):
     def __init__(self, scanner):
@@ -14,6 +15,8 @@ class Ast_identifier_node(Ast_node):
         self.__parse()
 
     def __parse(self):
+        util.logger.log(f"\tNow parsing: {self.__scanner.current_item()}", Log_level.VERBOSE)
+
         name = self.__scanner.next()
 
         if self.__scanner.preview().word_is("("):
