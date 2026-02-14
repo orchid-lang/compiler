@@ -9,5 +9,8 @@ class Ast_function_node(Ast_node):
         self.__returns = returns
         self.__body = body
 
+    def get_descendants(self):
+        return self.__body
+
     def __str__(self):
         return f"Ast_function_node: {self.__name.get_word()} with {len(self.__body)} body nodes"

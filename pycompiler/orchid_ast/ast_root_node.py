@@ -23,3 +23,5 @@ class Ast_root_node(Ast_node):
 
         for i, node in enumerate(self.__tree):
             util.logger.log(f"#{i}: {node}", Log_level.DEBUG)
+            for j, deep_node in enumerate(node.get_descendants()):
+                util.logger.log(f"#{i} - #{j}: {deep_node}", Log_level.VERBOSE)

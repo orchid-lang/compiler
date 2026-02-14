@@ -9,6 +9,12 @@ class Ast_node:
 
     def get_type(self):
         return self.__type.name
+    
+    def set_type(self, type):
+        self.__type = type
+    
+    def get_descendants(self):
+        return []
 
     def __str__(self):
         return f"Ast_node of type {self.__type.name}"

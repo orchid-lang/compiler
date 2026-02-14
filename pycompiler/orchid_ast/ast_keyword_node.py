@@ -12,7 +12,7 @@ class Ast_keyword_node(Ast_node):
         
         self.condition = []
         self.id = None
-        self.body = None
+        self.body = []
 
     # TODO: Somehow find a way to not have this function here following DRY principle.
     def __expect_token(self, to_expect):
@@ -40,11 +40,12 @@ class Ast_keyword_node(Ast_node):
                 token = next()
             self.__expect_token("then")
             # TODO: parse body
-            self.__type = Ast_type.CONDITION
+            self.set_type(Ast_type.CONDITION)
             self.condition = condition_tokens
         elif self.__scanner.current_item().word_is("let"):
             self.__scanner.next()
             name = self.__expect_type(Token_type.IDENTIFIER)
             self.__expect_token("=")
             util.logger.log(f"New variable: {name}", Log_level.DEBUG)
+            self.set_type(Ast_type.DEFINITION)
             

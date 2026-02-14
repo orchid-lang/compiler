@@ -35,7 +35,7 @@ class Ast_identifier_node(Ast_node):
                 if self.__scanner.preview().word_is(","):
                     self._scanner.next()
 
-            self.__type = Ast_type.CALL
+            self.set_type(Ast_type.CALL)
             self.__name = name
             self.__args = args
 
