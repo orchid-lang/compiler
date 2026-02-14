@@ -1,6 +1,6 @@
-from log_level import Log_level
-from token import Token
-from token_type import Token_type
+from util.log_level import Log_level
+from lexer.token import Token
+from lexer.token_type import Token_type
 
 def init():
     global default_module_path, log_level

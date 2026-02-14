@@ -1,6 +1,6 @@
-import util
-from token_type import Token_type
-from log_level import Log_level
+from util import util
+from lexer.token_type import Token_type
+from util.log_level import Log_level
 
 class Token:
     def __init__(self, word, type=Token_type.NONE):

@@ -1,5 +1,5 @@
-import config
-from log_level import Log_level
+from util import config
+from util.log_level import Log_level
 from datetime import datetime
 
 class Logger:

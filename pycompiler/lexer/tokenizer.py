@@ -1,9 +1,8 @@
-import util
-import config
-from log_level import Log_level
-from scanner import Scanner
-from token import Token
-from token_type import Token_type
+from util import util, config
+from util.log_level import Log_level
+from lexer.scanner import Scanner
+from lexer.token import Token
+from lexer.token_type import Token_type
 
 class Tokenizer:
     def __init__(self, text):

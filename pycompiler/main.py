@@ -1,7 +1,6 @@
 import sys
-import config
-import util
-from module import Module
+from util import util, config
+from util.module import Module
 
 def main():
     config.init()

@@ -1,6 +1,6 @@
-import util
-from log_level import Log_level
-from tokenizer import Tokenizer
+from util import util
+from util.log_level import Log_level
+from lexer.tokenizer import Tokenizer
 
 class Module:
     def __init__(self, path):

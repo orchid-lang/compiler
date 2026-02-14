@@ -1,4 +1,4 @@
-import util
+from util import util
 from log_level import Log_level
 
 class Scanner:

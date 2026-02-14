@@ -1,8 +1,8 @@
 import subprocess
 import sys
 
-import config
-from logger import Logger
+from util import config
+from util.logger import Logger
 
 
 def init():
