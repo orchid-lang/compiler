@@ -8,11 +8,14 @@ class Ast_keyword_node(Ast_node):
     def __init__(self, scanner):
         super().__init__(Ast_type.NONE)
         self.__scanner = scanner
-        self.__parse()
         
         self.condition = []
         self.id = None
         self.body = []
+        self.__name = ""
+        
+        self.__parse()
+        
 
     # TODO: Somehow find a way to not have this function here following DRY principle.
     def __expect_token(self, to_expect):
@@ -44,8 +47,8 @@ class Ast_keyword_node(Ast_node):
             self.condition = condition_tokens
         elif self.__scanner.current_item().word_is("let"):
             self.__scanner.next()
-            name = self.__expect_type(Token_type.IDENTIFIER)
+            self.__name = self.__expect_type(Token_type.IDENTIFIER)
             self.__expect_token("=")
-            util.logger.log(f"New variable: {name}", Log_level.DEBUG)
+            util.logger.log(f"New variable: {self.__name}", Log_level.DEBUG)
             self.set_type(Ast_type.DEFINITION)
             

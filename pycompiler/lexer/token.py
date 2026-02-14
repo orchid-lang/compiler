@@ -24,6 +24,7 @@ class Token:
             return Ast_identifier_node(scanner)
         elif self.__type == Token_type.KEYWORD:
             return Ast_keyword_node(scanner)
-    
+        return False
+
     def __str__(self):
         return f"Token '{self.__word}' is a(n) {self.__type.name}"

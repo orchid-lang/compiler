@@ -13,15 +13,16 @@ class Ast_identifier_node(Ast_node):
         self.__scanner = scanner
         self.__name = ""
         self.__args = []
+        
         self.__parse()
 
     def __parse(self):
         util.logger.log(f"\tNow parsing: {self.__scanner.current_item()}", Log_level.VERBOSE)
 
-        name = self.__scanner.next()
+        name = self.__scanner.current_item()
 
         if self.__scanner.preview().word_is("("):
-            self.__scanner.next()
+            self.__scanner.current_item()
             args = []
             while not self.__scanner.next().word_is(")"):
                 if self.__scanner.current_item().type_is(Token_type.LITERAL):

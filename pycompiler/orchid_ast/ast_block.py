@@ -31,9 +31,13 @@ class Ast_block:
         self.__expect_token("as")
         body = []
         while True:
-            if self.__scanner.current_item().word_is("end"):
+            token = self.__scanner.next()
+            if token.word_is("end"):
                 break
-            body.append(self.__scanner.next().parse(self.__scanner))
+            parsed = token.parse(self.__scanner)
+            if not parsed: continue
+            body.append(parsed)
+            
         return body
     
     def __define_function(self):
